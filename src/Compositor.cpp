@@ -133,9 +133,9 @@ Compositor::~Compositor() {
     SPDLOG_DEBUG("Shutting down Compositor");
 
     // Clean up window textures
-    for (auto const& [window, texture] : m_windowTextures) {
+    for (auto const &[window, texture] : m_windowTextures) {
         freeWindowTextureResources(window); // Free buffers/pixmaps
-        deleteOpenGLTexture(window);      // Free texture ID
+        deleteOpenGLTexture(window);        // Free texture ID
     }
     m_windowTextures.clear();
 
@@ -210,21 +210,21 @@ void Compositor::setupCompositeOverlay() {
 
     Atom cmAtom = XInternAtom(display, cmAtomName, False);
     XSetSelectionOwner(display, cmAtom, m_screenOwner, 0);
-    
+
     // Make sure it worked
     Window ownerWindow = XGetSelectionOwner(display, cmAtom);
     if (ownerWindow != m_screenOwner) {
-        SPDLOG_ERROR("Failed to set compositor selection owner: expected 0x{:x}, got 0x{:x}", 
-                    m_screenOwner, ownerWindow);
+        SPDLOG_ERROR("Failed to set compositor selection owner: expected 0x{:x}, got 0x{:x}",
+                     m_screenOwner, ownerWindow);
     } else {
-        SPDLOG_INFO("Successfully set window 0x{:x} as compositor selection owner for atom {}", 
-                   m_screenOwner, cmAtomName);
+        SPDLOG_INFO("Successfully set window 0x{:x} as compositor selection owner for atom {}",
+                    m_screenOwner, cmAtomName);
     }
 
     // Redirect subwindows - CRITICAL: using CompositeRedirectAutomatic for reliable compositing
     SPDLOG_INFO("Setting window redirection mode: CompositeRedirectAutomatic");
     XCompositeRedirectSubwindows(display, rootWindow, CompositeRedirectAutomatic);
-    
+
     // Flush X requests to ensure redirection takes effect
     XSync(display, False);
     SPDLOG_INFO("Applied compositing redirection to root window 0x{:x}", rootWindow);
@@ -251,24 +251,37 @@ void Compositor::setupGLXContext() {
 
     // Get GLX frame buffer configurations
     SPDLOG_DEBUG("Selecting GLX frame buffer configurations");
-    const int configAttributes[] = {
-        GLX_BIND_TO_TEXTURE_RGBA_EXT, 1,
-        GLX_BIND_TO_TEXTURE_TARGETS_EXT, GLX_TEXTURE_2D_BIT_EXT,
-        GLX_RENDER_TYPE, GLX_RGBA_BIT,
-        GLX_DRAWABLE_TYPE, GLX_PIXMAP_BIT,
-        GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
-        GLX_X_RENDERABLE, 1,
-        GLX_FRAMEBUFFER_SRGB_CAPABLE_EXT, static_cast<int>(GLX_DONT_CARE),
-        GLX_BUFFER_SIZE, 32,
-        GLX_DOUBLEBUFFER, 1,
-        GLX_RED_SIZE, 8,
-        GLX_GREEN_SIZE, 8,
-        GLX_BLUE_SIZE, 8,
-        GLX_ALPHA_SIZE, 8,
-        GLX_STENCIL_SIZE, 0,
-        GLX_DEPTH_SIZE, 16,
-        None
-    };
+    const int configAttributes[] = {GLX_BIND_TO_TEXTURE_RGBA_EXT,
+                                    1,
+                                    GLX_BIND_TO_TEXTURE_TARGETS_EXT,
+                                    GLX_TEXTURE_2D_BIT_EXT,
+                                    GLX_RENDER_TYPE,
+                                    GLX_RGBA_BIT,
+                                    GLX_DRAWABLE_TYPE,
+                                    GLX_PIXMAP_BIT,
+                                    GLX_X_VISUAL_TYPE,
+                                    GLX_TRUE_COLOR,
+                                    GLX_X_RENDERABLE,
+                                    1,
+                                    GLX_FRAMEBUFFER_SRGB_CAPABLE_EXT,
+                                    static_cast<int>(GLX_DONT_CARE),
+                                    GLX_BUFFER_SIZE,
+                                    32,
+                                    GLX_DOUBLEBUFFER,
+                                    1,
+                                    GLX_RED_SIZE,
+                                    8,
+                                    GLX_GREEN_SIZE,
+                                    8,
+                                    GLX_BLUE_SIZE,
+                                    8,
+                                    GLX_ALPHA_SIZE,
+                                    8,
+                                    GLX_STENCIL_SIZE,
+                                    0,
+                                    GLX_DEPTH_SIZE,
+                                    16,
+                                    None};
 
     m_glxConfigs = glXChooseFBConfig(display, screen, configAttributes, &m_glxConfigCount);
     if (!m_glxConfigs || m_glxConfigCount == 0) {
@@ -311,12 +324,13 @@ void Compositor::setupGLXContext() {
 
     // Create OpenGL 3.3 context
     SPDLOG_DEBUG("Creating OpenGL 3.3 core profile context");
-    const int contextAttributes[] = {
-        GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-        GLX_CONTEXT_MINOR_VERSION_ARB, 3,
-        GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
-        None
-    };
+    const int contextAttributes[] = {GLX_CONTEXT_MAJOR_VERSION_ARB,
+                                     3,
+                                     GLX_CONTEXT_MINOR_VERSION_ARB,
+                                     3,
+                                     GLX_CONTEXT_FLAGS_ARB,
+                                     GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+                                     None};
 
     // Get extension functions
     glXCreateContextAttribsARBProc glXCreateContextAttribsARB =
@@ -375,22 +389,23 @@ void Compositor::setupGLXContext() {
         glXDestroyContext(display, m_glxContext);
         throw std::runtime_error("Failed to initialize GLEW");
     }
-    
+
     // Clear any GLEW initialization errors
     while (glGetError() != GL_NO_ERROR) {
-        // GLEW initialization can sometimes produce an GL_INVALID_ENUM error which can be safely ignored
+        // GLEW initialization can sometimes produce an GL_INVALID_ENUM error which can be safely
+        // ignored
     }
 
     // Print OpenGL context info
-    const GLubyte* version = glGetString(GL_VERSION);
-    const GLubyte* renderer = glGetString(GL_RENDERER);
-    const GLubyte* vendor = glGetString(GL_VENDOR);
-    const GLubyte* glslVersion = glGetString(GL_SHADING_LANGUAGE_VERSION);
-    SPDLOG_INFO("OpenGL Context: Version: {}, Vendor: {}, Renderer: {}, GLSL: {}", 
-                version ? (const char*)version : "unknown",
-                vendor ? (const char*)vendor : "unknown", 
-                renderer ? (const char*)renderer : "unknown",
-                glslVersion ? (const char*)glslVersion : "unknown");
+    const GLubyte *version = glGetString(GL_VERSION);
+    const GLubyte *renderer = glGetString(GL_RENDERER);
+    const GLubyte *vendor = glGetString(GL_VENDOR);
+    const GLubyte *glslVersion = glGetString(GL_SHADING_LANGUAGE_VERSION);
+    SPDLOG_INFO("OpenGL Context: Version: {}, Vendor: {}, Renderer: {}, GLSL: {}",
+                version ? (const char *)version : "unknown",
+                vendor ? (const char *)vendor : "unknown",
+                renderer ? (const char *)renderer : "unknown",
+                glslVersion ? (const char *)glslVersion : "unknown");
 
     // Check for any OpenGL errors after initialization
     GLenum err;
@@ -440,15 +455,6 @@ float Compositor::renderFrame() {
     // Get all windows to render
     const auto &managedWindows = m_windowManager.getManagedWindows();
     int windowCount = managedWindows.size();
-    
-    // Log visible window count
-    int visibleCount = 0;
-    for (const auto &window : managedWindows) {
-        if (window.isVisible()) {
-            visibleCount++;
-        }
-    }
-    SPDLOG_DEBUG("Rendering frame with {} windows ({} visible)", windowCount, visibleCount);
 
     // Check for OpenGL errors before rendering
     GLenum error = glGetError();
@@ -466,7 +472,7 @@ float Compositor::renderFrame() {
     for (const auto &window : managedWindows) {
         if (window.isVisible()) {
             Window xWindow = window.getXWindow();
-            
+
             // Double check window existence and validity
             XWindowAttributes attribs;
             Status status = XGetWindowAttributes(m_windowManager.getDisplay(), xWindow, &attribs);
@@ -474,96 +480,40 @@ float Compositor::renderFrame() {
                 SPDLOG_WARN("Window 0x{:x} appears to be invalid, skipping render", xWindow);
                 continue;
             }
-            
+
             if (attribs.map_state != IsViewable) {
-                SPDLOG_WARN("Window 0x{:x} is not viewable (map_state={}), marking as requiring update", 
-                          xWindow, attribs.map_state);
+                SPDLOG_WARN(
+                    "Window 0x{:x} is not viewable (map_state={}), marking as requiring update",
+                    xWindow, attribs.map_state);
                 // Force an update of the window next time around
                 handleWindowModified(xWindow);
                 continue;
             }
-            
-            SPDLOG_DEBUG("Rendering window 0x{:x} at ({}, {}) size {}x{}", xWindow,
-                         window.getX(), window.getY(), window.getWidth(), window.getHeight());
+
+            SPDLOG_DEBUG("Rendering window 0x{:x} at ({}, {}) size {}x{}", xWindow, window.getX(),
+                         window.getY(), window.getWidth(), window.getHeight());
 
             // Skip windows with invalid dimensions
             if (window.getWidth() <= 0 || window.getHeight() <= 0) {
-                SPDLOG_WARN("Window 0x{:x} has invalid dimensions: {}x{}, skipping render", 
-                           xWindow, window.getWidth(), window.getHeight());
+                SPDLOG_WARN("Window 0x{:x} has invalid dimensions: {}x{}, skipping render", xWindow,
+                            window.getWidth(), window.getHeight());
                 continue;
             }
-            
+
             renderWindow(xWindow, index, windowCount, deltaTime);
-            
+
             // Check error immediately after rendering this window
             GLenum error = glGetError();
             if (error != GL_NO_ERROR) {
                 SPDLOG_ERROR("OpenGL error after rendering window 0x{:x}: {}", xWindow, error);
             }
-            
+
             index++;
         } else {
             SPDLOG_TRACE("Window 0x{:x} is not visible, skipping render", window.getXWindow());
         }
     }
 
-    // Draw a debug marker in a corner to indicate renderer is working
-    static bool debugMarkerInitialized = false;
-    static GLuint debugVAO = 0, debugVBO = 0, debugIBO = 0;
-    static GLuint debugShader = 0;
-    
-    if (!debugMarkerInitialized) {
-        // Create a small marker in the top-right corner
-        glGenVertexArrays(1, &debugVAO);
-        glBindVertexArray(debugVAO);
-        
-        glGenBuffers(1, &debugVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, debugVBO);
-        
-        const GLfloat markerVertices[] = {
-            0.95f, 0.95f,  // Top-right
-            0.99f, 0.95f,  // Top-right
-            0.99f, 0.99f,  // Bottom-right 
-            0.95f, 0.99f   // Bottom-right
-        };
-        
-        glBufferData(GL_ARRAY_BUFFER, sizeof(markerVertices), markerVertices, GL_STATIC_DRAW);
-        
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (void *)0);
-        glEnableVertexAttribArray(0);
-        
-        glGenBuffers(1, &debugIBO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, debugIBO);
-        
-        const GLuint markerIndices[] = {
-            0, 1, 2,  // First triangle
-            0, 2, 3   // Second triangle
-        };
-        
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(markerIndices), markerIndices, GL_STATIC_DRAW);
-        
-        // Create a simple shader for the marker
-        const char* markerVertSrc = R"(#version 330 core
-            layout(location = 0) in vec2 aPos;
-            void main() {
-                gl_Position = vec4(aPos, 0.0, 1.0);
-            })";
-            
-        const char* markerFragSrc = R"(#version 330 core
-            out vec4 FragColor;
-            void main() {
-                FragColor = vec4(0.0, 1.0, 0.0, 1.0); // Bright green
-            })";
-            
-        debugShader = createShaderProgram(markerVertSrc, markerFragSrc);
-        debugMarkerInitialized = true;
-    }
-    
-    // Draw the debug marker
-    glUseProgram(debugShader);
-    glBindVertexArray(debugVAO);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    
     // Unbind VAO
     glBindVertexArray(0);
 
@@ -593,22 +543,27 @@ void Compositor::renderWindow(Window xWindow, int zIndex, int windowCount, float
 
     // Check and create geometry if missing
     if (!texture->vao || !texture->vbo || !texture->ibo) {
-        SPDLOG_WARN("Window 0x{:x} geometry buffers missing or invalid (VAO={}, VBO={}, IBO={}). Creating now.", 
+        SPDLOG_WARN("Window 0x{:x} geometry buffers missing or invalid (VAO={}, VBO={}, IBO={}). "
+                    "Creating now.",
                     xWindow, texture->vao, texture->vbo, texture->ibo);
         createWindowGeometry(texture, window->getWidth(), window->getHeight());
-        
+
         // Check again after creation attempt
         if (!texture->vao || !texture->vbo || !texture->ibo) {
-            SPDLOG_ERROR("Failed to create geometry buffers for window 0x{:x} during render. Skipping.", xWindow);
+            SPDLOG_ERROR(
+                "Failed to create geometry buffers for window 0x{:x} during render. Skipping.",
+                xWindow);
             return; // Cannot render without geometry
         }
-        SPDLOG_INFO("Successfully created geometry buffers for window 0x{:x} during render.", xWindow);
+        SPDLOG_INFO("Successfully created geometry buffers for window 0x{:x} during render.",
+                    xWindow);
     }
-    
+
     // Log the current state of the window texture (should be valid now)
-    SPDLOG_DEBUG("Window 0x{:x} texture state: textureId={}, xPixmap=0x{:x}, glxPixmap=0x{:x}, VAO={}, VBO={}, IBO={}",
-               xWindow, texture->textureId, texture->xPixmap, texture->glxPixmap, 
-               texture->vao, texture->vbo, texture->ibo);
+    SPDLOG_DEBUG("Window 0x{:x} texture state: textureId={}, xPixmap=0x{:x}, glxPixmap=0x{:x}, "
+                 "VAO={}, VBO={}, IBO={}",
+                 xWindow, texture->textureId, texture->xPixmap, texture->glxPixmap, texture->vao,
+                 texture->vbo, texture->ibo);
 
     // Log more detailed checking of texture state -> This check is now handled above
     /* if (!texture->vao || !texture->vbo || !texture->ibo) { ... } */
@@ -620,10 +575,9 @@ void Compositor::renderWindow(Window xWindow, int zIndex, int windowCount, float
     float height = m_windowManager.heightDimensionToFloat(window->getHeight());
 
     SPDLOG_DEBUG("Window 0x{:x} properties: x={:.4f}, y={:.4f}, width={:.4f}, height={:.4f}",
-                xWindow, x, y, width, height);
-    SPDLOG_DEBUG("Window 0x{:x} original pixel dimensions: {}x{} at ({},{})",
-                xWindow, window->getWidth(), window->getHeight(),
-                window->getX(), window->getY());
+                 xWindow, x, y, width, height);
+    SPDLOG_DEBUG("Window 0x{:x} original pixel dimensions: {}x{} at ({},{})", xWindow,
+                 window->getWidth(), window->getHeight(), window->getX(), window->getY());
 
     // Calculate window depth (using zIndex for z-ordering)
     float depth = 1.0f - static_cast<float>(zIndex) / windowCount;
@@ -639,26 +593,27 @@ void Compositor::renderWindow(Window xWindow, int zIndex, int windowCount, float
 
     // **** CRITICAL SECTION: Render window content ****
     SPDLOG_DEBUG("Starting critical window render section for window 0x{:x}", xWindow);
-    
+
     // 1. Activate texture unit 0 for the window texture
     glActiveTexture(GL_TEXTURE0);
     SPDLOG_DEBUG("Activated texture unit GL_TEXTURE0");
-    
+
     // 2. Reset the binding to nothing to avoid state conflicts
     glBindTexture(GL_TEXTURE_2D, 0);
-    
+
     // 3. Bind the window texture via GLX
     bindWindowTexture(xWindow);
-    
+
     // 4. Check if texture binding succeeded
     GLint boundTextureID = 0;
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &boundTextureID);
     SPDLOG_DEBUG("Current GL_TEXTURE_BINDING_2D after bindWindowTexture = {}", boundTextureID);
-    
+
     if (boundTextureID == 0) {
         SPDLOG_ERROR("No texture was bound after bindWindowTexture for window 0x{:x}", xWindow);
-    } else if (boundTextureID != texture->textureId) {
-        SPDLOG_ERROR("Wrong texture was bound: expected {}, got {}", texture->textureId, boundTextureID);
+    } else if (boundTextureID != static_cast<GLint>(texture->textureId)) {
+        SPDLOG_ERROR("Wrong texture was bound: expected {}, got {}", texture->textureId,
+                     boundTextureID);
     }
 
     // 5. Use window shader program
@@ -666,24 +621,25 @@ void Compositor::renderWindow(Window xWindow, int zIndex, int windowCount, float
     SPDLOG_DEBUG("Using window shader program {}", m_windowShader);
 
     // 6. Set blend mode for solid rendering regardless of alpha
-    glBlendFunc(GL_ONE, GL_ZERO);  // Replace destination with source
-    
+    glBlendFunc(GL_ONE, GL_ZERO); // Replace destination with source
+
     // Set texture sampling to nearest for crisp text
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    
+
     // 7. Set all uniforms explicitly
-    glUniform1i(m_textureUniform, 0);  // Texture unit 0
+    glUniform1i(m_textureUniform, 0); // Texture unit 0
     glUniform1f(m_opacityUniform, 1.0f);
     glUniform1f(m_depthUniform, depth);
-    
+
     // CRITICAL: Set position and size uniforms correctly
     glUniform2f(m_positionUniform, x, y);
     glUniform2f(m_sizeUniform, width, height);
-    
-    SPDLOG_DEBUG("Set window 0x{:x} uniforms: depth={:.3f}, position=({:.3f},{:.3f}), size=({:.3f},{:.3f})",
-                xWindow, depth, x, y, width, height);
-    
+
+    SPDLOG_DEBUG(
+        "Set window 0x{:x} uniforms: depth={:.3f}, position=({:.3f},{:.3f}), size=({:.3f},{:.3f})",
+        xWindow, depth, x, y, width, height);
+
     // Check for errors before drawing
     GLenum preDrawError = glGetError();
     if (preDrawError != GL_NO_ERROR) {
@@ -693,11 +649,11 @@ void Compositor::renderWindow(Window xWindow, int zIndex, int windowCount, float
     // 8. Bind the VAO for geometry
     glBindVertexArray(texture->vao);
     SPDLOG_DEBUG("Bound VAO {} for window 0x{:x}", texture->vao, xWindow);
-    
+
     // 9. Draw the window
     glDrawElements(GL_TRIANGLES, texture->indexCount, GL_UNSIGNED_INT, 0);
     SPDLOG_DEBUG("Drew window 0x{:x} with {} indices", xWindow, texture->indexCount);
-    
+
     // 10. Unbind VAO
     glBindVertexArray(0);
 
@@ -718,7 +674,7 @@ void Compositor::renderWindow(Window xWindow, int zIndex, int windowCount, float
     // Set up fallback shader program
     static GLuint fallbackShader = 0;
     if (!fallbackShader) {
-        static const char* fallbackVertSrc = R"(#version 330 core
+        static const char *fallbackVertSrc = R"(#version 330 core
             layout(location = 0) in vec2 aPos;
             out vec2 localPos;
             uniform vec2 uPosition;
@@ -728,8 +684,8 @@ void Compositor::renderWindow(Window xWindow, int zIndex, int windowCount, float
                 localPos = aPos;
                 gl_Position = vec4(aPos * uSize + uPosition, uDepth + 0.01, 1.0);
             })";
-            
-        static const char* fallbackFragSrc = R"(#version 330 core
+
+        static const char *fallbackFragSrc = R"(#version 330 core
             in vec2 localPos;
             out vec4 FragColor;
             void main() {
@@ -743,29 +699,29 @@ void Compositor::renderWindow(Window xWindow, int zIndex, int windowCount, float
                 if (isBorder) color = vec3(1.0, 1.0, 0.0);
                 FragColor = vec4(color, 0.75);
             })";
-            
+
         fallbackShader = createShaderProgram(fallbackVertSrc, fallbackFragSrc);
         SPDLOG_INFO("Created fallback pattern shader {}", fallbackShader);
     }
-    
+
     // Draw the fallback pattern a bit offset from the main window
     glUseProgram(fallbackShader);
-    
+
     // Get uniform locations only once
     static GLint fallbackPosLoc = glGetUniformLocation(fallbackShader, "uPosition");
     static GLint fallbackSizeLoc = glGetUniformLocation(fallbackShader, "uSize");
     static GLint fallbackDepthLoc = glGetUniformLocation(fallbackShader, "uDepth");
-    
+
     // Offset position by a fraction
-    glUniform2f(fallbackPosLoc, x + width*0.05f, y - height*0.05f);
+    glUniform2f(fallbackPosLoc, x + width * 0.05f, y - height * 0.05f);
     glUniform2f(fallbackSizeLoc, width * 0.3f, height * 0.3f);
     glUniform1f(fallbackDepthLoc, depth + 0.02f);
-    
+
     // Use same geometry
     glBindVertexArray(texture->vao);
     glDrawElements(GL_TRIANGLES, texture->indexCount, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-    
+
     // Restore window shader for next window
     glUseProgram(m_windowShader);
 }
@@ -785,7 +741,7 @@ void Compositor::renderWindowShadow(int zIndex, int windowCount, float x, float 
 
     // Shadow is drawn slightly behind the window
     float shadowDepth = depth - 0.01f;
-    
+
     // Add a slight y offset for better visual effect
     float yOffset = -spreadY / 32.0f - (zIndex == 0 ? spreadY / 16.0f : 0.0f);
 
@@ -800,7 +756,7 @@ void Compositor::renderWindowShadow(int zIndex, int windowCount, float x, float 
     glBindVertexArray(m_shadowVAO);
     glDrawElements(GL_TRIANGLES, m_shadowIndexCount, GL_UNSIGNED_BYTE, nullptr);
     glBindVertexArray(0); // Unbind VAO
-    
+
     // Check for errors after drawing shadow
     GLenum error = glGetError();
     if (error != GL_NO_ERROR) {
@@ -815,9 +771,9 @@ void Compositor::handleWindowCreated(Window xWindow) {
     XWindowAttributes attribs;
     if (XGetWindowAttributes(m_windowManager.getDisplay(), xWindow, &attribs)) {
         SPDLOG_INFO("Window created 0x{:x}: size={}x{}, depth={}, visual=0x{:x}, mapped={}",
-                   xWindow, attribs.width, attribs.height, attribs.depth,
-                   XVisualIDFromVisual(attribs.visual),
-                   (attribs.map_state == IsViewable ? "yes" : "no"));
+                    xWindow, attribs.width, attribs.height, attribs.depth,
+                    XVisualIDFromVisual(attribs.visual),
+                    (attribs.map_state == IsViewable ? "yes" : "no"));
     }
 
     // Make sure we have a current OpenGL context before doing any GL operations
@@ -831,7 +787,9 @@ void Compositor::handleWindowCreated(Window xWindow) {
     // Create window texture entry - initially empty
     WindowTexture texture = {};
     m_windowTextures[xWindow] = texture;
-    SPDLOG_INFO("Created initial texture entry for window 0x{:x} (geometry will be created on modify/render)", xWindow);
+    SPDLOG_INFO("Created initial texture entry for window 0x{:x} (geometry will be created on "
+                "modify/render)",
+                xWindow);
 
     // Geometry will be created by renderWindow when first needed.
     // No need to force renderFrame here.
@@ -863,7 +821,7 @@ void Compositor::handleWindowDestroyed(Window xWindow) {
 
     // Clean up damage tracking
     cleanupDamageTracking(xWindow);
-    
+
     // Free window GL buffers and pixmaps
     freeWindowTextureResources(xWindow);
     // Explicitly delete the OpenGL texture object
@@ -871,7 +829,7 @@ void Compositor::handleWindowDestroyed(Window xWindow) {
 
     // Remove from texture map
     m_windowTextures.erase(xWindow);
-    
+
     // Force a render frame to update the display
     renderFrame();
 }
@@ -919,55 +877,57 @@ void Compositor::bindWindowTexture(Window xWindow) {
 
     // Synchronize X11 to ensure we have the latest window state
     XSync(m_windowManager.getDisplay(), False);
-    
+
     // Use XGetWindowAttributes to check window validity
     XWindowAttributes attrs;
     if (!XGetWindowAttributes(m_windowManager.getDisplay(), xWindow, &attrs)) {
         SPDLOG_ERROR("Window 0x{:x} is not a valid X window during texture binding", xWindow);
         return;
     }
-    
-    SPDLOG_DEBUG("Window 0x{:x} attributes: width={}, height={}, depth={}, map_state={}", 
-                xWindow, attrs.width, attrs.height, attrs.depth, attrs.map_state);
+
+    SPDLOG_DEBUG("Window 0x{:x} attributes: width={}, height={}, depth={}, map_state={}", xWindow,
+                 attrs.width, attrs.height, attrs.depth, attrs.map_state);
 
     // Grab server to ensure atomic operations
     XGrabServer(m_windowManager.getDisplay());
-    
+
     // Check if we need to update the pixmap
     bool needsNewPixmap = texture->needsUpdate || !texture->glxPixmap;
-    
+
     if (needsNewPixmap) {
         SPDLOG_DEBUG("Window 0x{:x} needs texture update", xWindow);
-        
+
         // Release previous texture binding
         if (texture->glxPixmap) {
             if (texture->textureId != 0) {
                 glBindTexture(GL_TEXTURE_2D, texture->textureId);
-                m_glXReleaseTexImageEXT(m_windowManager.getDisplay(), texture->glxPixmap, GLX_FRONT_LEFT_EXT);
+                m_glXReleaseTexImageEXT(m_windowManager.getDisplay(), texture->glxPixmap,
+                                        GLX_FRONT_LEFT_EXT);
             }
-            
+
             // Free GLX pixmap
             glXDestroyPixmap(m_windowManager.getDisplay(), texture->glxPixmap);
             texture->glxPixmap = 0;
-            
+
             // Free X pixmap
             XFreePixmap(m_windowManager.getDisplay(), texture->xPixmap);
             texture->xPixmap = 0;
         }
-        
+
         // Try to find a matching FBConfig - use direct visual ID match
         GLXFBConfig config = nullptr;
-        
+
         // IMPORTANT: Force RGB format, avoid RGBA which can cause sampling issues
         // Use GLX_TEXTURE_FORMAT_RGB_EXT for classic RGB format
         int format = GLX_TEXTURE_FORMAT_RGB_EXT;
-        
+
         VisualID windowVisID = XVisualIDFromVisual(attrs.visual);
-        
+
         // First try to find an exact visual match
         bool foundMatch = false;
         for (int i = 0; i < m_glxConfigCount; i++) {
-            XVisualInfo* vInfo = glXGetVisualFromFBConfig(m_windowManager.getDisplay(), m_glxConfigs[i]);
+            XVisualInfo *vInfo =
+                glXGetVisualFromFBConfig(m_windowManager.getDisplay(), m_glxConfigs[i]);
             if (vInfo) {
                 if (vInfo->visualid == windowVisID) {
                     config = m_glxConfigs[i];
@@ -978,15 +938,17 @@ void Compositor::bindWindowTexture(Window xWindow) {
                 XFree(vInfo);
             }
         }
-        
+
         // If no exact match, try to find any compatible config
         if (!foundMatch) {
             for (int i = 0; i < m_glxConfigCount; i++) {
                 int depth, visualId;
-                
-                glXGetFBConfigAttrib(m_windowManager.getDisplay(), m_glxConfigs[i], GLX_DEPTH_SIZE, &depth);
-                glXGetFBConfigAttrib(m_windowManager.getDisplay(), m_glxConfigs[i], GLX_VISUAL_ID, &visualId);
-                
+
+                glXGetFBConfigAttrib(m_windowManager.getDisplay(), m_glxConfigs[i], GLX_DEPTH_SIZE,
+                                     &depth);
+                glXGetFBConfigAttrib(m_windowManager.getDisplay(), m_glxConfigs[i], GLX_VISUAL_ID,
+                                     &visualId);
+
                 // Check for compatible depth
                 if (depth == attrs.depth) {
                     config = m_glxConfigs[i];
@@ -994,20 +956,17 @@ void Compositor::bindWindowTexture(Window xWindow) {
                 }
             }
         }
-        
+
         if (!config) {
             SPDLOG_ERROR("No matching FBConfig found for window 0x{:x}", xWindow);
             XUngrabServer(m_windowManager.getDisplay());
             return;
         }
-        
+
         // Define pixmap attributes for RGB format
-        const int pixmapAttribs[] = { 
-            GLX_TEXTURE_TARGET_EXT, GLX_TEXTURE_2D_EXT,
-            GLX_TEXTURE_FORMAT_EXT, format,
-            None 
-        };
-        
+        const int pixmapAttribs[] = {GLX_TEXTURE_TARGET_EXT, GLX_TEXTURE_2D_EXT,
+                                     GLX_TEXTURE_FORMAT_EXT, format, None};
+
         // Try to create a name pixmap
         texture->xPixmap = XCompositeNameWindowPixmap(m_windowManager.getDisplay(), xWindow);
         if (!texture->xPixmap) {
@@ -1015,9 +974,10 @@ void Compositor::bindWindowTexture(Window xWindow) {
             XUngrabServer(m_windowManager.getDisplay());
             return;
         }
-        
+
         // Create GLX pixmap from X pixmap
-        texture->glxPixmap = glXCreatePixmap(m_windowManager.getDisplay(), config, texture->xPixmap, pixmapAttribs);
+        texture->glxPixmap =
+            glXCreatePixmap(m_windowManager.getDisplay(), config, texture->xPixmap, pixmapAttribs);
         if (!texture->glxPixmap) {
             SPDLOG_ERROR("Failed to create GLX pixmap for window 0x{:x}", xWindow);
             XFreePixmap(m_windowManager.getDisplay(), texture->xPixmap);
@@ -1025,31 +985,33 @@ void Compositor::bindWindowTexture(Window xWindow) {
             XUngrabServer(m_windowManager.getDisplay());
             return;
         }
-        
+
         // Reset the update flag
         texture->needsUpdate = false;
     }
-    
+
     // Generate texture if needed
     if (texture->textureId == 0) {
         glGenTextures(1, &texture->textureId);
         SPDLOG_INFO("Generated new texture ID {} for window 0x{:x}", texture->textureId, xWindow);
     }
-    
+
     // Bind the texture
     glBindTexture(GL_TEXTURE_2D, texture->textureId);
-    
+
     // Set minimal parameters - exactly like SimpWM
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
+
     // Clear errors before binding
-    while (glGetError() != GL_NO_ERROR) {}
-    
+    while (glGetError() != GL_NO_ERROR) {
+    }
+
     // CRITICAL CALL: Bind the pixmap content to the texture
     SPDLOG_DEBUG("Binding GLX pixmap 0x{:x} to texture {}", texture->glxPixmap, texture->textureId);
-    m_glXBindTexImageEXT(m_windowManager.getDisplay(), texture->glxPixmap, GLX_FRONT_LEFT_EXT, NULL);
-    
+    m_glXBindTexImageEXT(m_windowManager.getDisplay(), texture->glxPixmap, GLX_FRONT_LEFT_EXT,
+                         NULL);
+
     // Check for errors immediately after
     GLenum error = glGetError();
     if (error != GL_NO_ERROR) {
@@ -1057,7 +1019,7 @@ void Compositor::bindWindowTexture(Window xWindow) {
     } else {
         SPDLOG_DEBUG("Successfully bound GLX pixmap to texture");
     }
-    
+
     // Keep server grabbed until unbindWindowTexture
 }
 
@@ -1144,11 +1106,11 @@ void Compositor::createWindowGeometry(WindowTexture *texture, int width, int hei
         SPDLOG_ERROR("Null texture pointer passed to createWindowGeometry");
         return;
     }
-    
+
     // Ensure valid dimensions
     width = std::max(1, width);
     height = std::max(1, height);
-    
+
     SPDLOG_DEBUG("Creating window geometry with dimensions {}x{}", width, height);
 
     // Delete any existing geometry resources to prevent leaks
@@ -1156,12 +1118,12 @@ void Compositor::createWindowGeometry(WindowTexture *texture, int width, int hei
         glDeleteVertexArrays(1, &texture->vao);
         texture->vao = 0;
     }
-    
+
     if (texture->vbo) {
         glDeleteBuffers(1, &texture->vbo);
         texture->vbo = 0;
     }
-    
+
     if (texture->ibo) {
         glDeleteBuffers(1, &texture->ibo);
         texture->ibo = 0;
@@ -1174,7 +1136,7 @@ void Compositor::createWindowGeometry(WindowTexture *texture, int width, int hei
         return;
     }
     SPDLOG_DEBUG("Created VAO {}", texture->vao);
-    
+
     // Bind VAO to record subsequent operations
     glBindVertexArray(texture->vao);
 
@@ -1187,7 +1149,7 @@ void Compositor::createWindowGeometry(WindowTexture *texture, int width, int hei
         return;
     }
     SPDLOG_DEBUG("Created VBO {}", texture->vbo);
-    
+
     // Generate IBO
     glGenBuffers(1, &texture->ibo);
     if (!texture->ibo) {
@@ -1203,21 +1165,21 @@ void Compositor::createWindowGeometry(WindowTexture *texture, int width, int hei
     // Simple quad vertices in normalized device coordinates using reduced scale
     // Use -0.5 to 0.5 range instead of -1.0 to 1.0 to address the 2x scaling issue
     const GLfloat vertices[] = {
-        -0.5f,  0.5f,  // Top-left
-        -0.5f, -0.5f,  // Bottom-left
-         0.5f, -0.5f,  // Bottom-right
-         0.5f,  0.5f   // Top-right
+        -0.5f, 0.5f,  // Top-left
+        -0.5f, -0.5f, // Bottom-left
+        0.5f,  -0.5f, // Bottom-right
+        0.5f,  0.5f   // Top-right
     };
 
     const GLuint indices[] = {
-        0, 1, 2,  // First triangle (bottom-right)
-        0, 2, 3   // Second triangle (top-left)
+        0, 1, 2, // First triangle (bottom-right)
+        0, 2, 3  // Second triangle (top-left)
     };
 
     // Update buffer data
     glBindBuffer(GL_ARRAY_BUFFER, texture->vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    
+
     // Check for errors after buffer data upload
     GLenum error = glGetError();
     if (error != GL_NO_ERROR) {
@@ -1231,7 +1193,7 @@ void Compositor::createWindowGeometry(WindowTexture *texture, int width, int hei
     // Set up element buffer
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, texture->ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    
+
     // Check for errors after element buffer upload
     error = glGetError();
     if (error != GL_NO_ERROR) {
@@ -1240,16 +1202,16 @@ void Compositor::createWindowGeometry(WindowTexture *texture, int width, int hei
 
     // Store the number of indices for drawing
     texture->indexCount = sizeof(indices) / sizeof(indices[0]);
-    
+
     // Verify all was created successfully
     error = glGetError();
     if (error != GL_NO_ERROR) {
         SPDLOG_ERROR("OpenGL error during geometry creation: {}", error);
     } else {
-        SPDLOG_INFO("Successfully created geometry with {} indices for VAO={}, VBO={}, IBO={}", 
-                   texture->indexCount, texture->vao, texture->vbo, texture->ibo);
+        SPDLOG_INFO("Successfully created geometry with {} indices for VAO={}, VBO={}, IBO={}",
+                    texture->indexCount, texture->vao, texture->vbo, texture->ibo);
     }
-    
+
     // Unbind VAO to prevent accidental modification
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -1333,19 +1295,21 @@ void Compositor::updateBufferData(GLuint vao, GLuint vbo, GLsizeiptr vboSize, co
 void Compositor::setupDamageTracking(Window xWindow) {
     WindowTexture *texture = getWindowTexture(xWindow);
     if (!texture) {
-        SPDLOG_ERROR("Cannot set up damage tracking for non-existent window texture 0x{:x}", xWindow);
+        SPDLOG_ERROR("Cannot set up damage tracking for non-existent window texture 0x{:x}",
+                     xWindow);
         return;
     }
-    
+
     if (texture->damage) {
         // Already has damage tracking
         return;
     }
-    
+
     // Create damage object for this window
     texture->damage = XDamageCreate(m_windowManager.getDisplay(), xWindow, XDamageReportNonEmpty);
-    SPDLOG_INFO("Set up damage tracking for window 0x{:x}, damage=0x{:x}", xWindow, texture->damage);
-    
+    SPDLOG_INFO("Set up damage tracking for window 0x{:x}, damage=0x{:x}", xWindow,
+                texture->damage);
+
     // Mark as needing update initially
     texture->needsUpdate = true;
 }
@@ -1356,7 +1320,7 @@ void Compositor::cleanupDamageTracking(Window xWindow) {
     if (!texture || !texture->damage) {
         return;
     }
-    
+
     // Destroy the damage object
     XDamageDestroy(m_windowManager.getDisplay(), texture->damage);
     texture->damage = 0;
@@ -1367,17 +1331,17 @@ void Compositor::cleanupDamageTracking(Window xWindow) {
 void Compositor::handleDamageEvent(XDamageNotifyEvent *event) {
     // Find the window by its drawable ID
     Window xWindow = event->drawable;
-    
+
     WindowTexture *texture = getWindowTexture(xWindow);
     if (!texture) {
         SPDLOG_WARN("Received damage event for unknown window 0x{:x}", xWindow);
         return;
     }
-    
+
     // Mark the window as needing update
     texture->needsUpdate = true;
     SPDLOG_DEBUG("Window 0x{:x} marked as damaged", xWindow);
-    
+
     // Subtract the damage region to acknowledge we've seen it
     XDamageSubtract(m_windowManager.getDisplay(), event->damage, None, None);
 }

@@ -64,7 +64,7 @@ class WindowTexture {
     GLuint vbo = 0;
     GLuint ibo = 0;
     int indexCount = 0;
-    
+
     // Damage tracking
     Damage damage = 0;
     bool needsUpdate = true;
@@ -120,7 +120,7 @@ class Compositor {
     void handleWindowCreated(Window xWindow);
     void handleWindowModified(Window xWindow);
     void handleWindowDestroyed(Window xWindow);
-    
+
     /**
      * Handle damage events
      */
@@ -205,7 +205,7 @@ class Compositor {
     static constexpr int CORNER_RADIUS = 3; // pixels
     static constexpr int CORNER_RESOLUTION = 8;
     static constexpr double TAU = 6.283185307179586;
-    
+
     // XDamage extension
     int m_damageEventBase = 0;
 };
